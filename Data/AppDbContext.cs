@@ -8,9 +8,9 @@ public class AppDbContext : DbContext
     public DbSet<Product> Products { get; set; }
     public DbSet<Supplier> Suppliers { get; set; }
 
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    public AppDbContext(DbContextOptions<AppDbContext> dbContextOptions)
+    : base(dbContextOptions)
     {
-        optionsBuilder.UseNpgsql("Host=localhost; Database=ProductDatabase; Username=postgres; Password=0932");
+        
     }
 }

@@ -9,13 +9,14 @@ namespace ForApplication.PresentationLogic.Views;
 
 public class ProductView
 {
-    private readonly IProductServic _productServic;
-    public ProductView()
+    private readonly AppDbContext _context;
+    private readonly IProductServic _product;
+    public ProductView(IProductServic product, AppDbContext context)
     {
-        _productServic = new ProductServic(
-            _dataAccess: new ProductDataAccess(
-                db: new Data.AppDbContext()));
+        this._product = product;
+        this._context = context;
     }
+
 
     public async Task Menu()
     {
@@ -60,7 +61,6 @@ public class ProductView
     }
 
 
-
     async Task AddProduct()
     {
         Console.Clear();
@@ -93,7 +93,7 @@ public class ProductView
 
         try
         {
-            bool isCreated = await this._productServic.AddProductAsync(result);
+            bool isCreated = await this._product.AddProductAsync(result);
 
             if (isCreated)
             {
@@ -114,7 +114,7 @@ public class ProductView
     {
         Console.Clear();
 
-        var result = await _productServic.GetAllProducts().ToListAsync();
+        var result = await _product.GetAllProducts().ToListAsync();
 
         Console.WriteLine("Ma'lumotlar bazasidagi barcha mahsulotlar!");
         Console.WriteLine();
@@ -175,7 +175,7 @@ public class ProductView
 
         try
         {
-            bool isUpdate = await this._productServic.UpdateProductAsync(result);
+            bool isUpdate = await this._product.UpdateProductAsync(result);
 
             if (isUpdate)
             {
@@ -210,12 +210,12 @@ public class ProductView
 
         try
         {
-            bool isDelete = await this._productServic.DeleteProductAsync(id: id);
+            bool isDelete = await this._product.DeleteProductAsync(id: id);
 
             if (isDelete)
             {
                 Console.WriteLine();
-                Console.WriteLine("Shaxs muvaffaqiyatli o'chirildi.  Davom etish uchun biror tugmani bosing...");
+                Console.WriteLine("Mahsulot muvaffaqiyatli o'chirildi.  Davom etish uchun biror tugmani bosing...");
                 Console.ReadKey();
             }
         }
@@ -277,12 +277,11 @@ public class ProductView
     }
 
 
-    private static void Filtering()
+    private void Filtering()
     {
         Console.Clear();
-        var context = new AppDbContext();
 
-        var expensiveProducts = context.Products.Where(p => p.Price > 10000).ToList();
+        var expensiveProducts = _context.Products.Where(p => p.Price > 10000).ToList();
 
         Console.WriteLine("Narxi 10000 dan katta bo'lgan mahsulotlar:");
         foreach (var product in expensiveProducts)
@@ -292,12 +291,11 @@ public class ProductView
     }
 
 
-    private static void Arrange()
+    private void Arrange()
     {
         Console.Clear();
-        var context = new AppDbContext();
 
-        var sortedByPrice = context.Products.OrderBy(p => p.Price).ToList();
+        var sortedByPrice = _context.Products.OrderBy(p => p.Price).ToList();
         Console.WriteLine("Narx bo'yicha tartiblangan mahsulotlar:");
         foreach (var product in sortedByPrice)
         {
@@ -306,7 +304,7 @@ public class ProductView
 
         Console.WriteLine();
         
-        var sortedByCategoryAndName = context.Products.OrderBy(p => p.Category).ThenBy(p => p.Name).ToList();
+        var sortedByCategoryAndName = _context.Products.OrderBy(p => p.Category).ThenBy(p => p.Name).ToList();
         Console.WriteLine("Kategoriyasi va Nomi bo'yicha tartiblangan mahsulotlar:");
         foreach(var product in sortedByCategoryAndName)
         {
@@ -315,12 +313,11 @@ public class ProductView
     }
 
 
-    private static void Grouping()
+    private void Grouping()
     {
         Console.Clear();
-        var context = new AppDbContext();
 
-        var groupedByCategory = context.Products.GroupBy(p => p.Category).
+        var groupedByCategory = _context.Products.GroupBy(p => p.Category).
             Select(g => new {Category = g.Key, Count = g.Count()}).ToList();
         Console.WriteLine("Kategoriya bo'yicha guruhlangan mahsulotlar:");
         foreach (var group in groupedByCategory)
@@ -330,7 +327,7 @@ public class ProductView
 
         Console.WriteLine();
         
-        var groupedByPriceRange = context.Products.GroupBy(p => p.Price <= 50 ? "0-50" : p.Price <= 100 ? "51-100" : "100+")
+        var groupedByPriceRange = _context.Products.GroupBy(p => p.Price <= 50 ? "0-50" : p.Price <= 100 ? "51-100" : "100+")
                                                   .Select(g => new { PriceRange = g.Key, Count = g.Count() }).ToList();
         Console.WriteLine("Mahsulotlarni narx diapazoni bo'yicha guruhlang mahsulotlar:");
         foreach (var group in groupedByPriceRange)
@@ -340,12 +337,11 @@ public class ProductView
     }
 
 
-    private static void Projection()
+    private void Projection()
     {
         Console.Clear();
-        var context = new AppDbContext();
 
-        var productNamesAndPrices = context.Products.Select(p => new { p.Name, p.Price }).ToList();
+        var productNamesAndPrices = _context.Products.Select(p => new { p.Name, p.Price }).ToList();
         Console.WriteLine("\nMahsulot nomlari va narxlari:");
         foreach (var item in productNamesAndPrices)
         {
@@ -354,21 +350,20 @@ public class ProductView
 
         Console.WriteLine();
 
-        var productsWithStockStatus = context.Products.Select(p => new {p.Name, StockStatus = p.StockQuantity > 0 ? 
+        var productsWithStockStatus = _context.Products.Select(p => new {p.Name, StockStatus = p.StockQuantity > 0 ? 
                                                              "Omborda mavjud" : "Zahirada qolmagan"}).ToList();
         productsWithStockStatus.ForEach(product => Console.WriteLine($"Name: {product.Name}, Status: {product.StockStatus}"));
     }
 
 
-    private static void Aggregation()
+    private void Aggregation()
     {
         Console.Clear();
-        var context = new AppDbContext();
 
-        var averagePrice = context.Products.Average(p => p.Price);
-        var maxPrice = context.Products.Max(p => p.Price);
-        var minPrice = context.Products.Min(p => p.Price);
-        var totalStock = context.Products.Sum(p => p.StockQuantity);
+        var averagePrice = _context.Products.Average(p => p.Price);
+        var maxPrice = _context.Products.Max(p => p.Price);
+        var minPrice = _context.Products.Min(p => p.Price);
+        var totalStock = _context.Products.Sum(p => p.StockQuantity);
 
         Console.WriteLine($"Mahsulotlarning o'rtacha narxi: {averagePrice}");
         Console.WriteLine($"Mahsulotlar orasidagi maksimal narx: {maxPrice}");
@@ -377,12 +372,11 @@ public class ProductView
     }
 
 
-    private static void Unification()
+    private void Unification()
     {
         Console.Clear();
-        var context = new AppDbContext();
 
-        var productsWithSuppliers = context.Products.Join(context.Suppliers, p => p.SupplierId, s => s.Id, (
+        var productsWithSuppliers = _context.Products.Join(_context.Suppliers, p => p.SupplierId, s => s.Id, (
                                                     p, s) => new { p.Name, SupplierName = s.Name }).ToList();
 
         Console.WriteLine("Mahsulotlar va ularning yetkazib beruvchilari:");
@@ -393,14 +387,13 @@ public class ProductView
     }
 
 
-    private static void GroupingAndAggregation()
+    private void GroupingAndAggregation()
     {
         Console.Clear();
-        var context = new AppDbContext();
 
         Console.WriteLine("Kategoriya bo'yicha guruhlangan va o'rtacha narxlar:");
 
-        context.Products.GroupBy(p => p.Category)
+        _context.Products.GroupBy(p => p.Category)
             .Select(g => new { Category = g.Key, AveragePrice = g.Average(p => p.Price) }).ToList()
             .ForEach(group => Console.WriteLine($"Category: {group.Category}, Average Price: {group.AveragePrice}"));
     }
